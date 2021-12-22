@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-def run_pf(pos, velo, measurement, num_particles, epsilon, nt, dt):
+def run_pf(pos, measurement, num_particles, epsilon, nt):
     a = []
     b = []
     a.append(pos(0) + epsilon * np.random.normal(size=[num_particles]))
@@ -13,7 +13,7 @@ def run_pf(pos, velo, measurement, num_particles, epsilon, nt, dt):
         p_a_given_b = norm.pdf(a[t - 1], loc=pos(t - 1), scale=1/epsilon) * p_b_given_a
         p_a_given_b /= np.sum(p_a_given_b)
         a.append(np.random.choice(a[t - 1], size=[num_particles], p=p_a_given_b))
-        a[t] += dt * velo(t - 1)
+        a[t] += pos(t) - pos(t - 1)
     return a, b
 
 if __name__ == '__main__':
@@ -21,16 +21,14 @@ if __name__ == '__main__':
     epsilon = 0.01
 
     nt = 1000
-    dt = 0.1
 
     alpha = 1
-    beta = 1
+    beta = np.pi / 200
     pos = lambda t: alpha * np.sin(beta * t)
-    velo = lambda t: alpha * beta * np.cos(beta * t)
 
     pole_loc = -0.25
     dist = lambda x: np.abs(pole_loc - x)
-    a, b = run_pf(pos, velo, dist, num_particles, epsilon, nt, dt)
+    a, b = run_pf(pos, dist, num_particles, epsilon, nt)
 
     a_avg = [np.sum(elem) / num_particles for elem in a]
     plt.plot(range(nt), a_avg)
